@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>とりりん リアクションラベラー</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",sans-serif;color:#272333;background:#fff9f2}
+*{box-sizing:border-box}body{margin:0}main{max-width:720px;margin:auto;padding:16px 14px 60px}h1{font-size:22px;margin:12px 0 4px}p{color:#6d6472;font-size:13px}
+.panel{background:white;border:1px solid #f0e4df;border-radius:18px;padding:14px;margin:14px 0;box-shadow:0 2px 9px #30202009}
+input{width:100%;font-size:16px;padding:12px;border:1px solid #ddd0d0;border-radius:12px}
+button{font:inherit;border:0;border-radius:12px;padding:12px;cursor:pointer;font-weight:700}
+button:disabled{opacity:.45} .primary{background:#4e465b;color:white}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}
+#player{width:100%;aspect-ratio:16/9;background:#171923;border-radius:12px;overflow:hidden}
+#player iframe{width:100%;height:100%}
+.time{text-align:center;font-variant-numeric:tabular-nums;font-size:24px;font-weight:800;margin:12px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.actions button{padding:21px 6px;font-size:18px}.pink{background:#f9c9dc}.blue{background:#cbe3ff}.yellow{background:#ffe0a0;grid-column:span 2}
+.small{font-size:12px;color:#786f7c}.item{border-bottom:1px solid #eee;padding:10px 0;display:flex;align-items:center;gap:8px}
+.item span{flex:1;font-size:14px}.item button{padding:7px 10px;background:#f4edf0}
+#status{font-size:13px;color:#675c72;min-height:1.5em}
+</style></head>
+<body><main><h1>🐥 とりりん リアクションラベラー</h1><p>YouTubeを見ながら「ああん」「おおん」「ナイスリアクション」を記録しよう！</p>
+<section class="panel"><label for="url"><b>YouTube動画URL</b></label><input id="url" placeholder="https://www.youtube.com/watch?v=...">
+<div class="row" style="margin-top:10px"><button id="load" class="primary">動画を開く</button><button id="resume">前回の位置へ</button></div>
+<p id="status">動画URLを入力してください。</p></section>
+<section class="panel"><div id="player"></div><div id="time" class="time">00:00:00</div>
+<div class="row"><button id="back">−5秒</button><button id="play" class="primary">再生 / 停止</button><button id="forward">＋5秒</button></div>
+<p>登録ボタンを押した時刻を記録します。必要なら履歴の「時刻調整」で修正できます。</p>
+<div class="actions"><button class="pink" data-label="ああん">♡ ああん</button><button class="blue" data-label="おおん">おおん！</button><button class="yellow" data-label="ナイスリアクション">★ ナイスリアクション！</button></div>
+</section>
+<section class="panel"><b>登録履歴 <span id="count">0</span>件</b><div id="items"></div>
+<div class="row" style="margin-top:14px"><button id="export" class="primary">CSVを書き出す</button><button id="backup">JSONバックアップ</button></div>
+<div class="row" style="margin-top:8px"><button id="import">JSONを復元</button><input id="importFile" type="file" accept=".json,application/json" hidden></div>
+<p>記録はこのブラウザ内に自動保存されます。端末のデータ消去に備えて定期的にバックアップしてください。</p></section>
+<p>※ YouTubeの埋め込み再生が許可された動画で利用できます。iPhoneでは最初に動画上の再生ボタンを押す必要がある場合があります。通信環境やSafariの制限により動作が変わることがあります。</p></main>
+<script src="https://www.youtube.com/iframe_api"></script><script>
+"use strict";
+const $=id=>document.getElementById(id);
+const STORE="toririn_reaction_labeler_v1";
+let db={videoId:"",lastTime:0,labels:[]},player=null,ready=false,seq=0;
+try{const v=JSON.parse(localStorage.getItem(STORE));if(v&&typeof v==="object")db={...db,...v};}catch(e){}
+function save(){try{localStorage.setItem(STORE,JSON.stringify(db));}catch(e){status("保存できません。CSVを書き出してください。");}}
+function status(t){$("status").textContent=t}
+function extractId(s){try{let u=new URL(s.trim());let h=u.hostname.toLowerCase();if(h==="youtu.be"||h==="www.youtu.be")return u.pathname.split("/")[1]||"";if(["youtube.com","www.youtube.com","m.youtube.com","music.youtube.com","youtube-nocookie.com","www.youtube-nocookie.com"].includes(h)){if(u.pathname==="/watch")return u.searchParams.get("v")||"";let m=u.pathname.match(/^\/(?:live|shorts|embed)\/([^/]+)/);return m?m[1]:"";}}catch(e){}return "";}
+function validId(s){return /^[A-Za-z0-9_-]{11}$/.test(s)}
+function fmt(t){t=Math.max(0,Math.floor(Number(t)||0));return [Math.floor(t/3600),Math.floor(t%3600/60),t%60].map(x=>String(x).padStart(2,"0")).join(":")}
+function getTime(){try{if(ready&&player&&typeof player.getCurrentTime==="function")return Number(player.getCurrentTime())||0;}catch(e){}return 0}
+function setTime(t){try{if(ready)player.seekTo(Math.max(0,t),true);}catch(e){}}
+function onYouTubeIframeAPIReady(){window.ytApiReady=true;if(db.videoId)loadVideo(db.videoId,false)}
+window.onYouTubeIframeAPIReady=onYouTubeIframeAPIReady;
+function loadVideo(id,fromUser=true){
+if(!validId(id)){status("有効なYouTube動画URLを入力してください。");return}
+if(fromUser&&db.videoId&&db.videoId!==id){if(!confirm("別の動画を開きます。前の動画の記録はJSON/CSVで保存しましたか？"))return;db={videoId:id,lastTime:0,labels:[]};}
+else db.videoId=id;
+save();ready=false;seq++;
+$("url").value="https://www.youtube.com/watch?v="+id;
+if(!window.YT||!YT.Player){status("YouTubeプレイヤーの読み込みを待っています。");return}
+if(player&&typeof player.destroy==="function"){try{player.destroy()}catch(e){}}
+$("player").innerHTML="";
+const div=document.createElement("div");div.id="yt-frame";$("player").appendChild(div);
+player=new YT.Player("yt-frame",{videoId:id,playerVars:{playsinline:1,rel:0,origin:location.origin.startsWith("http")?location.origin:undefined},events:{onReady:()=>{ready=true;status("動画を読み込みました。再生してラベルを付けてください。");render()},onError:e=>status("動画を再生できません（エラー "+e.data+"）。埋め込み制限や公開状態を確認してください。")}});
+render();
+}
+$("load").onclick=()=>{let id=extractId($("url").value);loadVideo(id,true)};
+$("resume").onclick=()=>{if(!ready){status("動画の読み込みを待ってください。");return}setTime(db.lastTime);status("前回の位置に移動しました。")};
+$("back").onclick=()=>setTime(getTime()-5);
+$("forward").onclick=()=>setTime(getTime()+5);
+$("play").onclick=()=>{if(!ready)return;try{player.getPlayerState()===YT.PlayerState.PLAYING?player.pauseVideo():player.playVideo()}catch(e){}};
+document.querySelectorAll("[data-label]").forEach(b=>b.onclick=()=>{
+if(!ready){status("先に動画を読み込んでください。");return}
+let t=getTime();db.labels.push({id:Date.now()+"-"+(++seq),videoId:db.videoId,time:Math.round(t*10)/10,label:b.dataset.label});
+db.lastTime=t;save();render();status(fmt(t)+" に「"+b.dataset.label+"」を登録しました。");
+});
+function render(){
+$("count").textContent=db.labels.length;
+const items=$("items");items.replaceChildren();
+[...db.labels].sort((a,b)=>a.time-b.time).forEach(v=>{
+const line=document.createElement("div");line.className="item";
+const name=document.createElement("span");name.textContent=fmt(v.time)+"　"+v.label;
+const seek=document.createElement("button");seek.textContent="移動";seek.onclick=()=>setTime(v.time);
+const edit=document.createElement("button");edit.textContent="時刻調整";edit.onclick=()=>{const ans=prompt("動画開始からの秒数（例：125.5）",String(v.time));if(ans===null)return;const t=Number(ans);if(!Number.isFinite(t)||t<0||ans.trim()===""){alert("0以上の秒数を入力してください");return}v.time=Math.round(t*10)/10;save();render()};
+const del=document.createElement("button");del.textContent="削除";del.onclick=()=>{if(confirm("このラベルを削除しますか？")){db.labels=db.labels.filter(x=>x.id!==v.id);save();render()}};
+line.append(name,seek,edit,del);items.appendChild(line);
+});
+}
+function download(name,text,type){const blob=new Blob([text],{type});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000)}
+$("export").onclick=()=>{const esc=x=>'"'+String(x).replaceAll('"','""')+'"';let lines=["video_id,time_seconds,label"];for(const v of [...db.labels].sort((a,b)=>a.time-b.time))lines.push([v.videoId,v.time,v.label].map(esc).join(","));download("reaction_labels_"+(db.videoId||"unknown")+".csv","\uFEFF"+lines.join("\r\n"),"text/csv;charset=utf-8")};
+$("backup").onclick=()=>download("reaction_backup_"+(db.videoId||"unknown")+".json",JSON.stringify(db,null,2),"application/json");
+$("import").onclick=()=>$("importFile").click();
+$("importFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{let data=JSON.parse(await f.text());if(!validId(data.videoId)||!Array.isArray(data.labels)||!data.labels.every(x=>x.videoId===data.videoId&&Number.isFinite(x.time)&&x.time>=0&&["ああん","おおん","ナイスリアクション"].includes(x.label)))throw Error("データ形式が違います");if(!confirm("現在の記録をバックアップの内容で置き換えますか？"))return;db={videoId:data.videoId,lastTime:Number(data.lastTime)||0,labels:data.labels.map((x,i)=>({id:String(x.id||i),videoId:x.videoId,time:x.time,label:x.label}))};save();loadVideo(db.videoId,false);render();status("バックアップを復元しました。")}catch(err){alert("復元できません: "+err.message)}finally{e.target.value=""}};
+setInterval(()=>{if(ready){let t=getTime();$("time").textContent=fmt(t);if(Math.abs(t-db.lastTime)>2){db.lastTime=t;save()}}},1000);
+$("url").value=db.videoId?"https://www.youtube.com/watch?v="+db.videoId:"";render();
+if(window.ytApiReady&&db.videoId)loadVideo(db.videoId,false);
+</script></body></html>
