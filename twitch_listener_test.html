@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ああんおおん発見器 | Twitchテスト版</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic UI",sans-serif;color:#59462e;background:#fff9ed}*{box-sizing:border-box}body{margin:0}main{max-width:780px;margin:auto;padding:16px 12px 45px}h1{font-size:22px}p,.muted{color:#796c5b;font-size:13px;line-height:1.6}.panel{background:#fff;border:1px solid #ebdec4;border-radius:18px;padding:14px;margin:12px 0;box-shadow:0 3px 12px #75633810}label{display:block;font-weight:700;margin-bottom:7px}input{width:100%;padding:12px;font-size:16px;border:1px solid #d6c6a9;border-radius:12px}button{font:inherit;border:0;border-radius:12px;padding:12px;cursor:pointer;font-weight:700;color:#59462e;background:#efe6d2}button:disabled{opacity:.5}.primary{background:#ffe08b}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.time{text-align:center;font-size:25px;font-weight:800;font-variant-numeric:tabular-nums;margin:10px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actions button{font-size:18px;padding:20px 6px}.pink{background:#f9c9dc}.blue{background:#cbe3ff}.yellow{background:#ffe0a0}.mint{background:#c9efdb}#status{white-space:pre-wrap;min-height:2em}.player-scroll{overflow-x:auto;border-radius:12px;background:#171923}#player{width:100%;min-width:400px;min-height:300px;aspect-ratio:16/9}#player iframe{display:block}.item{border-bottom:1px solid #eee;padding:9px 0;display:flex;align-items:center;gap:5px}.item span{flex:1;font-size:13px}.item button{padding:7px;font-size:12px}.note{background:#fff1cf;padding:10px;border-radius:10px;font-size:12px;line-height:1.7}.foot{font-size:12px;color:#917854}
+</style></head><body><main>
+<h1>🐥 ああんおおん発見器 <small>（Twitchテスト版）</small></h1>
+<p>まずはTwitchのアーカイブ再生・再生時刻・4種類の記録を確認する版だよ。<strong>スプレッドシートには送信しません。</strong></p>
+<section class="panel"><label for="url">TwitchアーカイブURL</label><input id="url" type="url" inputmode="url" placeholder="https://www.twitch.tv/videos/1234567890"><div class="row" style="margin-top:10px"><button id="load" class="primary">🐥 動画を開く</button><button id="resume">前回の位置へ</button></div><p id="status" role="status">TwitchアーカイブURLを入れて「動画を開く」を押してね。</p></section>
+<section class="panel"><div class="player-scroll"><div id="player"></div></div><p class="foot">※ Twitch公式の埋め込みプレイヤーは最小400×300px。スマホの幅が狭い場合、動画部分だけ横にスクロールできるよ。</p><div id="time" class="time">00:00:00</div><div class="row"><button id="back">−5秒</button><button id="play" class="primary">再生 / 停止</button><button id="forward">＋5秒</button></div><p>リアクションが聞こえた瞬間に押してね。広告中は押さないでね。</p><div class="actions"><button class="pink" data-label="ああん">♡ ああん</button><button class="blue" data-label="おおん">おおん！</button><button class="yellow" data-label="ナイスプレイ">★ ナイスプレイ！</button><button class="mint" data-label="情けない">🥹 情けない</button></div></section>
+<section class="panel"><b>テスト記録 <span id="count">0</span>件</b><div id="items"></div><div class="row"><button id="export">CSVで保存</button><button id="clear">全件削除</button></div><p class="muted">この版の記録は端末のブラウザ内だけに保存。既存のYouTube版とは別の保存領域だよ。</p></section>
+<section class="panel"><div class="note">🔒 <strong>安全なテスト用</strong>：Google Apps Scriptへの送信処理は含まれていません。既存の発見器・スプレッドシートは変更しません。Twitchの再生ができたら、次の段階で送信形式を設計します。</div></section>
+<script src="https://player.twitch.tv/js/embed/v1.js"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id),KEY='toririn_twitch_vod_test_v1';
+let db={videoId:'',lastTime:0,labels:[]},player=null,ready=false,seq=0;
+try{const old=JSON.parse(localStorage.getItem(KEY)||'null');if(old&&typeof old==='object'){db={...db,...old};if(!Array.isArray(db.labels))db.labels=[];}}catch(e){}
+function status(s){$('status').textContent=s;}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db));}catch(e){status('ブラウザへの保存に失敗。CSVを保存してください。');}}
+function fmt(t){t=Math.max(0,Math.floor(Number(t)||0));return [Math.floor(t/3600),Math.floor(t%3600/60),Math.floor(t%60)].map(x=>String(x).padStart(2,'0')).join(':');}
+function extractId(s){try{const u=new URL(s.trim());if(!['twitch.tv','www.twitch.tv','m.twitch.tv'].includes(u.hostname.toLowerCase()))return '';const m=u.pathname.match(/^\/videos\/(\d+)\/?$/);return m?m[1]:'';}catch(e){return '';}}
+function getTime(){if(!ready||!player)return null;try{const t=Number(player.getCurrentTime());return Number.isFinite(t)&&t>=0?t:null;}catch(e){return null;}}
+function setTime(t){if(!ready||!player){status('先に動画を読み込んでね。');return;}try{player.seek(Math.max(0,Number(t)||0));}catch(e){status('時刻移動エラー：'+e.message);}}
+function createPlayer(id){
+ if(!window.Twitch||!Twitch.Player){status('Twitchプレイヤーの読み込みに失敗。ネットワークや広告ブロックを確認してください。');return;}
+ if(!location.hostname||!/^https:$/.test(location.protocol)){status('Twitchの埋め込みにはHTTPS公開ページが必要です。GitHub PagesなどにこのHTMLを置いてアクセスしてね。');return;}
+ ready=false;player=null;$('player').replaceChildren();const el=document.createElement('div');el.id='twitch-frame';$('player').appendChild(el);
+ status('Twitchアーカイブを読み込んでいるぴよ…');
+ try{
+  player=new Twitch.Player('twitch-frame',{width:'100%',height:Math.max(300,Math.round($('player').getBoundingClientRect().width*9/16)),video:id,autoplay:false,muted:false,parent:[location.hostname]});
+  player.addEventListener(Twitch.Player.READY,()=>{ready=true;status('プレイヤーの準備ができたよ！再生位置が動くか確認してね。');});
+  player.addEventListener(Twitch.Player.PLAYING,()=>{ready=true;status('再生中！リアクションを登録できるよ。');});
+  player.addEventListener(Twitch.Player.PLAYBACK_BLOCKED,()=>status('ブラウザが再生をブロック。動画内の再生ボタンを押してみてね。'));
+ }catch(e){status('Twitchプレイヤー初期化エラー：'+e.message);}
+}
+$('load').onclick=()=>{const id=extractId($('url').value);if(!id){status('TwitchアーカイブURL（/videos/数字）を入力してね。');return;}
+ if(db.videoId&&db.videoId!==id&&db.labels.length&&!confirm('別の動画に切り替えるとテスト記録を消します。先にCSV保存した？'))return;
+ if(db.videoId!==id){db.labels=[];db.lastTime=0;}db.videoId=id;save();render();$('url').value='https://www.twitch.tv/videos/'+id;createPlayer(id);};
+$('resume').onclick=()=>{setTime(db.lastTime);};
+$('back').onclick=()=>{const t=getTime();if(t!==null)setTime(t-5);};
+$('forward').onclick=()=>{const t=getTime();if(t!==null)setTime(t+5);};
+$('play').onclick=()=>{if(!ready||!player){status('先に動画を読み込んでね。');return;}try{player.isPaused()?player.play():player.pause();}catch(e){status('再生操作エラー：'+e.message);}};
+document.querySelectorAll('[data-label]').forEach(b=>b.onclick=()=>{const t=getTime();if(t===null){status('再生位置を取得できないよ。アーカイブを再生してから押してね。');return;}
+ db.labels.push({id:Date.now()+'-'+(++seq),videoId:db.videoId,time:Math.round(t*10)/10,label:b.dataset.label});db.lastTime=t;save();render();status(fmt(t)+' に「'+b.dataset.label+'」を記録したよ！');});
+function render(){ $('count').textContent=db.labels.length;const target=$('items');target.replaceChildren();[...db.labels].sort((a,b)=>a.time-b.time).forEach(v=>{const line=document.createElement('div');line.className='item';const name=document.createElement('span');name.textContent=fmt(v.time)+'　'+v.label;
+ const seek=document.createElement('button');seek.textContent='移動';seek.onclick=()=>setTime(v.time);
+ const edit=document.createElement('button');edit.textContent='時刻調整';edit.onclick=()=>{const ans=prompt('動画開始からの秒数',String(v.time));if(ans===null)return;const t=Number(ans);if(!Number.isFinite(t)||t<0||t>86400||!ans.trim()){alert('0～86400秒を入力してね');return;}v.time=Math.round(t*10)/10;save();render();};
+ const del=document.createElement('button');del.textContent='削除';del.onclick=()=>{if(confirm('この記録を削除する？')){db.labels=db.labels.filter(x=>x.id!==v.id);save();render();}};line.append(name,seek,edit,del);target.append(line);});}
+$('clear').onclick=()=>{if(db.labels.length&&confirm('テスト記録をすべて消す？')){db.labels=[];save();render();}};
+$('export').onclick=()=>{const q=x=>'"'+String(x).replaceAll('"','""')+'"';const rows=[['platform','video_id','time_seconds','label'].join(','),...[...db.labels].sort((a,b)=>a.time-b.time).map(v=>['twitch',v.videoId,v.time,v.label].map(q).join(','))];const blob=new Blob(['\uFEFF'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='twitch_reactions_'+(db.videoId||'unknown')+'.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);};
+setInterval(()=>{const t=getTime();if(t!==null){$('time').textContent=fmt(t);if(Math.abs(t-db.lastTime)>2){db.lastTime=t;save();}}},1000);
+$('url').value=db.videoId?'https://www.twitch.tv/videos/'+db.videoId:'';render();
+</script></main></body></html>
