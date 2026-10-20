@@ -1,53 +1,133 @@
-<!DOCTYPE html>
-<html lang="ja"><head><base target="_top"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta charset="utf-8">
-<title>ああんおおん発見器byとりりん</title>
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ああんおおん発見器 by とりりん（協力版）</title>
 <style>
-:root{font-family:system-ui,-apple-system,sans-serif;color:#443628;background:#fffaf1}*{box-sizing:border-box}body{margin:0}main{max-width:740px;margin:auto;padding:18px 14px 48px}h1{font-size:1.5rem;margin:8px 0}p{line-height:1.5}.muted{color:#776b60;font-size:.9rem}.panel{background:white;border:1px solid #eadcca;border-radius:16px;padding:15px;margin:14px 0;box-shadow:0 2px 9px #7050220b}label{display:block;font-weight:650;margin:9px 0 5px}input{width:100%;font-size:16px;border:1px solid #d4c5b5;border-radius:9px;padding:11px}button{border:0;border-radius:12px;padding:13px 15px;font-size:1rem;font-weight:700;cursor:pointer}button:disabled{opacity:.5;cursor:default}.action{background:#f3cc6d}.small{background:#f2eee7;padding:9px 12px;font-size:.9rem}.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px}.buttons button{min-height:65px}.buttons button:last-child{grid-column:span 2}.pink{background:#f7c9db}.blue{background:#cde7ff}.gold{background:#ffe3a3}#player{width:100%;aspect-ratio:16/9;background:#eee;border-radius:10px;overflow:hidden}#player iframe{width:100%;height:100%}#records{padding-left:24px}#records li{padding:5px 0}#records button{margin-left:8px}.submit{width:100%;background:#e4b73f}#status{white-space:pre-wrap;min-height:22px} .warn{color:#a23c25}
+:root{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",sans-serif;color:#302737;background:#fff9f2}
+*{box-sizing:border-box}body{margin:0}main{max-width:720px;margin:auto;padding:16px 14px 60px}h1{font-size:22px;margin:12px 0 4px}p{color:#6d6472;font-size:13px;line-height:1.6}
+.panel{background:white;border:1px solid #f0e4df;border-radius:18px;padding:14px;margin:14px 0;box-shadow:0 2px 9px #30202009}
+label{display:block;font-weight:700;margin-bottom:6px}input{width:100%;font-size:16px;padding:12px;border:1px solid #ddd0d0;border-radius:12px}button{font:inherit;border:0;border-radius:12px;padding:12px;cursor:pointer;font-weight:700}button:disabled{opacity:.45}
+.primary{background:#4e465b;color:white}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:9px}.row>*{flex:1}
+#player{width:100%;aspect-ratio:16/9;background:#171923;border-radius:12px;overflow:hidden}#player iframe{width:100%;height:100%}
+.time{text-align:center;font-variant-numeric:tabular-nums;font-size:24px;font-weight:800;margin:12px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actions button{padding:21px 6px;font-size:18px}.pink{background:#f9c9dc}.blue{background:#cbe3ff}.yellow{background:#ffe0a0;grid-column:span 2}
+.small{font-size:12px;color:#786f7c}.item{border-bottom:1px solid #eee;padding:10px 0;display:flex;align-items:center;gap:8px}.item span{flex:1;font-size:14px}.item button{padding:7px 10px;background:#f4edf0}
+#status,#sendStatus{font-size:13px;color:#675c72;min-height:1.5em;white-space:pre-wrap}.send{background:#f2c96e;width:100%;padding:17px}.note{font-size:12px;color:#a04431}
 </style></head><body><main>
-<h1>🐥 ああんおおん発見器 by とりりん</h1><p class="muted">配信の「ああん」「おおん」を見つけて、とりりんの切り抜きAI育成を手伝ってね！</p>
-<section class="panel"><label for="nickname">ニックネーム（任意）</label><input id="nickname" maxlength="30" placeholder="空欄なら匿名"><label for="url">YouTubeアーカイブのURL</label><input id="url" placeholder="https://www.youtube.com/watch?v=..." inputmode="url"><div class="controls"><button class="action" id="load">動画を開く</button></div></section>
-<section class="panel"><div id="player"></div><p id="playerStatus" class="muted" role="status">YouTubeプレイヤーを準備しています…</p><div class="controls"><button class="small" id="back">−5秒</button><button class="small" id="play">再生／一時停止</button><button class="small" id="forward">＋5秒</button></div><p class="muted">再生時刻：<strong id="clock">00:00</strong>　※広告中は登録しないでね</p></section>
-<section class="panel"><div class="buttons"><button class="pink" data-label="ああん">♡ ああん</button><button class="blue" data-label="おおん">おおん！</button><button class="gold" data-label="ナイスリアクション">★ ナイスリアクション！</button></div><p class="muted">声が聞こえた瞬間に押してね。あとから削除・時刻修正もできるよ。</p></section>
-<section class="panel"><h2>登録履歴 <span id="count">0</span>件</h2><ol id="records"></ol><button class="small" id="clear">全件削除</button></section>
-<section class="panel"><h2>とりりんに送信</h2><p class="muted">登録した動画ID・時刻・リアクション・任意のお名前を送信します。送信後も履歴は端末に残ります。※送信結果はこの画面だけでは確定できません。</p><button class="submit" id="send">内容を確認して送信</button><p id="status" role="status"></p></section>
-</main><script>
-let player=null,ready=false,videoId='',items=[],batchId='';const $=id=>document.getElementById(id);const STORE='toririn_github_listener_v1';
-function save(){localStorage.setItem(STORE,JSON.stringify({videoId,items,batchId,nickname:$('nickname').value,url:$('url').value}));}
-function restore(){try{const s=JSON.parse(localStorage.getItem(STORE)||'{}');videoId=s.videoId||'';items=Array.isArray(s.items)?s.items:[];batchId=s.batchId||'';$('nickname').value=s.nickname||'';$('url').value=s.url||'';}catch(e){} render();}
-function parseId(v){try{const u=new URL(v);if(u.hostname==='youtu.be'||u.hostname==='www.youtu.be')return u.pathname.slice(1).split('/')[0];if(['youtube.com','www.youtube.com','m.youtube.com','youtube-nocookie.com','www.youtube-nocookie.com'].includes(u.hostname)){if(u.pathname.startsWith('/shorts/')||u.pathname.startsWith('/live/')||u.pathname.startsWith('/embed/'))return u.pathname.split('/')[2];return u.searchParams.get('v');}}catch(e){}return null;}
-function fmt(s){s=Math.max(0,Math.floor(s||0));return Math.floor(s/3600)?`${Math.floor(s/3600)}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`:`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;}
-function render(){const list=$('records');list.replaceChildren();$('count').textContent=items.length;items.forEach((item,i)=>{const li=document.createElement('li');li.append(document.createTextNode(fmt(item.time_seconds)+'　'+item.label+' '));const edit=document.createElement('button');edit.className='small';edit.textContent='時刻修正';edit.onclick=()=>{const val=prompt('再生時刻（秒）',String(item.time_seconds));if(val===null)return;const n=Number(val);if(!Number.isFinite(n)||n<0||n>86400)return alert('0〜86400の数字を入力してね');item.time_seconds=Math.round(n*10)/10;batchId='';save();render();};const del=document.createElement('button');del.className='small';del.textContent='削除';del.onclick=()=>{items.splice(i,1);batchId='';save();render();};li.append(edit,del);list.append(li);});}
-function loadVideo(){const id=parseId($('url').value.trim());if(!id||!/^[A-Za-z0-9_-]{11}$/.test(id))return alert('YouTube動画のURLを確認してね');if(videoId&&videoId!==id&&items.length&&!confirm('別の動画に切り替えると登録履歴が消えるよ。切り替える？'))return;if(videoId!==id){items=[];batchId='';}videoId=id;save();render();if(ready){try{player.loadVideoById(id);setPlayerMessage('動画を読み込み中…');}catch(err){setPlayerMessage('読み込みエラー：'+err.message);}}else {setPlayerMessage('YouTubeプレイヤーの準備待ちです。しばらく待っても変わらなければ、このページを再読み込みしてください。');}}}
-function setPlayerMessage(message){$('playerStatus').textContent=message;}
-window.onYouTubeIframeAPIReady=function(){
-  setPlayerMessage('YouTubeプレイヤーを初期化しています…');
-  try {player=new YT.Player('player',{height:'390',width:'640',videoId:videoId||undefined,playerVars:{playsinline:1,rel:0},events:{
-    onReady:()=>{ready=true;setPlayerMessage('準備完了。動画を開くボタンを押してください。');if(videoId)player.cueVideoById(videoId);},
-    onError:(event)=>{const messages={2:'動画IDが正しくありません',5:'動画を再生できません',100:'動画が見つからないか非公開です',101:'この動画は埋め込み再生が許可されていません',150:'この動画は埋め込み再生が許可されていません',153:'YouTube側が再生環境を確認できません（エラー153）'};setPlayerMessage('YouTubeエラー '+event.data+'：'+(messages[event.data]||'再生に失敗しました'));},
-    onStateChange:(event)=>{if(event.data===YT.PlayerState.PLAYING)setPlayerMessage('再生中');}
-  }});}catch(err){setPlayerMessage('プレイヤー初期化エラー：'+err.message);}
-};
-window.addEventListener('error',event=>{if(!ready)setPlayerMessage('読み込みエラー：'+event.message);});
-setTimeout(()=>{if(!ready)setPlayerMessage('YouTubeプレイヤーが準備できません。ブラウザの制限や埋め込み環境が原因の可能性があります。');},12000);
-$('load').onclick=loadVideo;$('nickname').oninput=save;
-$('back').onclick=()=>{if(ready)player.seekTo(Math.max(0,player.getCurrentTime()-5),true);};$('forward').onclick=()=>{if(ready)player.seekTo(player.getCurrentTime()+5,true);};$('play').onclick=()=>{if(!ready)return;player.getPlayerState()===YT.PlayerState.PLAYING?player.pauseVideo():player.playVideo();};
-document.querySelectorAll('[data-label]').forEach(btn=>btn.onclick=()=>{if(!ready||!videoId)return alert('先に動画を開いてね');const t=player.getCurrentTime();if(!Number.isFinite(t))return;items.push({time_seconds:Math.round(t*10)/10,label:btn.dataset.label});batchId='';save();render();});
-$('clear').onclick=()=>{if(confirm('登録履歴をすべて削除する？')){items=[];batchId='';save();render();}};
+<h1>🐥 ああんおおん発見器 by とりりん</h1>
+<p>配信の「ああん」「おおん」「ナイスリアクション」を登録して、とりりんの切り抜きAI育成をお手伝い！</p>
+<section class="panel">
+<label for="nickname">ニックネーム（任意）</label><input id="nickname" maxlength="30" placeholder="未入力なら匿名">
+<label for="url" style="margin-top:14px">YouTubeアーカイブURL</label><input id="url" inputmode="url" placeholder="https://www.youtube.com/watch?v=...">
+<div class="row"><button id="load" class="primary">動画を開く</button><button id="resume">前回の位置へ</button></div>
+<p id="status" role="status">動画URLを入力して「動画を開く」を押してください。</p>
+</section>
+<section class="panel"><div id="player"></div><div id="time" class="time">00:00:00</div>
+<div class="row"><button id="back">−5秒</button><button id="play" class="primary">再生 / 停止</button><button id="forward">＋5秒</button></div>
+<p>動画のリアクションが聞こえた瞬間に押してね。広告中は押さないでね。</p>
+<div class="actions"><button class="pink" data-label="ああん">♡ ああん</button><button class="blue" data-label="おおん">おおん！</button><button class="yellow" data-label="ナイスリアクション">★ ナイスリアクション！</button></div>
+</section>
+<section class="panel"><b>登録履歴 <span id="count">0</span>件</b><div id="items"></div>
+<div class="row"><button id="export">CSVでバックアップ</button><button id="clear">全件削除</button></div>
+<p>記録はこの端末のブラウザに一時保存されます。動画を切り替える前に必要な記録は送信・バックアップしてください。</p></section>
+<section class="panel"><h2>とりりんに送信 🐥</h2><p>送信するのは動画ID・登録時刻・リアクションの種類・ニックネーム（任意）だよ。</p>
+<button id="send" class="send">内容を確認して送信</button><p id="sendStatus" role="status"></p>
+<p class="note">※現在は動作確認用です。送信の成否はこのページから確定できません。公開前に管理者がスプレッドシートの受信内容を確認します。</p></section>
+</main>
+<script src="https://www.youtube.com/iframe_api"></script><script>
+'use strict';
+const $=id=>document.getElementById(id);
+const STORE='toririn_listener_working_v2';
+const OLD_STORE='toririn_github_listener_v1';
 const ENDPOINT='https://script.google.com/macros/s/AKfycbzdvhoFwJY5pUaV3rPWkzW0RxriVtE-UzrzaXl2UGkU8V3P6_WH7vAZFaNn16DQHi8_eQ/exec';
-$('send').onclick=async()=>{
- if(!videoId||!items.length)return alert('先にリアクションを登録してね');
- if(items.length>100)return alert('100件ずつ送信してね');
- if(!confirm(`${items.length}件を送信する？\nお名前：${$('nickname').value.trim()||'匿名'}`))return;
- if(!batchId){batchId='b'+Date.now().toString(36)+Math.random().toString(36).slice(2,14);save();}
- const btn=$('send');btn.disabled=true;$('status').textContent='送信中…';
+const VALID_LABELS=['ああん','おおん','ナイスリアクション'];
+let db={videoId:'',lastTime:0,labels:[],nickname:'',batchId:''},player=null,ready=false,seq=0,pendingId='';
+try{
+ let raw=localStorage.getItem(STORE);
+ if(raw){const v=JSON.parse(raw);if(v&&typeof v==='object')db={...db,...v};}
+ else {
+  raw=localStorage.getItem(OLD_STORE);
+  if(raw){const old=JSON.parse(raw);if(old&&typeof old==='object'){
+   db.videoId=old.videoId||'';db.nickname=old.nickname||'';db.batchId=old.batchId||'';
+   if(Array.isArray(old.items))db.labels=old.items.filter(x=>VALID_LABELS.includes(x.label)&&Number.isFinite(Number(x.time_seconds))).map((x,i)=>({id:'old-'+i,videoId:db.videoId,time:Number(x.time_seconds),label:x.label}));
+  }}
+ }
+}catch(e){}
+if(!Array.isArray(db.labels))db.labels=[];
+function save(){try{localStorage.setItem(STORE,JSON.stringify(db));}catch(e){status('保存できません。CSVバックアップを使ってください。');}}
+function status(t){$('status').textContent=t;}
+function sendStatus(t){$('sendStatus').textContent=t;}
+function extractId(s){try{const u=new URL(s.trim());const h=u.hostname.toLowerCase();if(['youtu.be','www.youtu.be'].includes(h))return u.pathname.split('/')[1]||'';if(['youtube.com','www.youtube.com','m.youtube.com','music.youtube.com','youtube-nocookie.com','www.youtube-nocookie.com'].includes(h)){if(u.pathname==='/watch')return u.searchParams.get('v')||'';const m=u.pathname.match(/^\/(?:live|shorts|embed)\/([^/]+)/);return m?m[1]:'';}}catch(e){}return '';}
+function validId(s){return /^[A-Za-z0-9_-]{11}$/.test(s);}
+function fmt(t){t=Math.max(0,Math.floor(Number(t)||0));return [Math.floor(t/3600),Math.floor(t%3600/60),t%60].map(x=>String(x).padStart(2,'0')).join(':');}
+function getTime(){try{if(ready&&player&&typeof player.getCurrentTime==='function')return Number(player.getCurrentTime())||0;}catch(e){}return 0;}
+function setTime(t){try{if(ready)player.seekTo(Math.max(0,t),true);}catch(e){status('時刻移動でエラー：'+e.message);}}
+window.onYouTubeIframeAPIReady=function(){window.ytApiReady=true;if(pendingId)createPlayer(pendingId);};
+function createPlayer(id){
+ if(!validId(id)){status('有効なYouTube動画URLを入力してください。');return;}
+ if(!window.YT||!YT.Player){pendingId=id;status('動画IDは確認できました。YouTubeプレイヤーの読み込み待ちです…');return;}
+ pendingId='';ready=false;seq++;
+ if(player&&typeof player.destroy==='function'){try{player.destroy();}catch(e){}}
+ $('player').innerHTML='';const div=document.createElement('div');div.id='yt-frame';$('player').appendChild(div);
+ status('動画 '+id+' を読み込んでいます…');
  try{
-  const payload={nickname:$('nickname').value,video_id:videoId,items,batch_id:batchId};
-  // Apps Script does not support cross-origin response reading from GitHub Pages.
-  // no-cors means the response cannot be verified: never claim confirmed success.
-  await fetch(ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
-  $('status').textContent='送信リクエストを出しました。ただしブラウザの制限で成功確認はできません。まず管理者がスプレッドシートへの記録を確認してください。';
- }catch(err){$('status').textContent='送信できませんでした：'+err.message+'。記録は端末に残っています。';}
- finally{btn.disabled=false;}
+ player=new YT.Player('yt-frame',{videoId:id,playerVars:{playsinline:1,rel:0,origin:location.origin.startsWith('http')?location.origin:undefined},events:{
+  onReady:()=>{ready=true;status('動画を読み込みました。再生してラベルを付けてください。');render();},
+  onError:e=>status('YouTube再生エラー '+e.data+'。公開状態・埋め込み制限・ブラウザ設定を確認してください。')
+ }});
+ }catch(e){status('プレイヤー初期化エラー：'+e.message);}
+}
+function openVideo(){
+ const id=extractId($('url').value);if(!validId(id)){status('URLを読み取れませんでした。YouTubeの動画URLを確認してください。');return;}
+ if(db.videoId&&db.videoId!==id&&db.labels.length&&!confirm('別の動画に切り替えると登録履歴が消えます。CSVバックアップや送信は済みましたか？'))return;
+ if(db.videoId!==id){db.labels=[];db.batchId='';db.lastTime=0;}
+ db.videoId=id;db.nickname=$('nickname').value.trim().slice(0,30);save();render();
+ $('url').value='https://www.youtube.com/watch?v='+id;
+ createPlayer(id);
+}
+$('load').onclick=openVideo;
+$('resume').onclick=()=>{if(!ready){status('動画を読み込んでから押してください。');return;}setTime(db.lastTime);status('前回の再生位置へ移動しました。');};
+$('back').onclick=()=>setTime(getTime()-5);
+$('forward').onclick=()=>setTime(getTime()+5);
+$('play').onclick=()=>{if(!ready){status('先に動画を開いてください。');return;}try{player.getPlayerState()===YT.PlayerState.PLAYING?player.pauseVideo():player.playVideo();}catch(e){status('再生操作エラー：'+e.message);}};
+$('nickname').oninput=()=>{db.nickname=$('nickname').value.trim().slice(0,30);save();};
+document.querySelectorAll('[data-label]').forEach(b=>b.onclick=()=>{
+ if(!ready){status('先に動画を読み込んでください。');return;}
+ const t=getTime();db.labels.push({id:Date.now()+'-'+(++seq),videoId:db.videoId,time:Math.round(t*10)/10,label:b.dataset.label});
+ db.lastTime=t;db.batchId='';save();render();status(fmt(t)+' に「'+b.dataset.label+'」を登録しました。');
+});
+function render(){
+ $('count').textContent=db.labels.length;const target=$('items');target.replaceChildren();
+ [...db.labels].sort((a,b)=>a.time-b.time).forEach(v=>{
+  const line=document.createElement('div');line.className='item';
+  const name=document.createElement('span');name.textContent=fmt(v.time)+'　'+v.label;
+  const seek=document.createElement('button');seek.textContent='移動';seek.onclick=()=>setTime(v.time);
+  const edit=document.createElement('button');edit.textContent='時刻調整';edit.onclick=()=>{const ans=prompt('動画開始からの秒数（例：125.5）',String(v.time));if(ans===null)return;const t=Number(ans);if(!Number.isFinite(t)||t<0||t>86400||ans.trim()===''){alert('0～86400の秒数を入力してください');return;}v.time=Math.round(t*10)/10;db.batchId='';save();render();};
+  const del=document.createElement('button');del.textContent='削除';del.onclick=()=>{if(confirm('このラベルを削除しますか？')){db.labels=db.labels.filter(x=>x.id!==v.id);db.batchId='';save();render();}};
+  line.append(name,seek,edit,del);target.append(line);
+ });
+}
+$('clear').onclick=()=>{if(db.labels.length&&confirm('登録履歴をすべて削除しますか？')){db.labels=[];db.batchId='';save();render();}};
+$('export').onclick=()=>{
+ const quote=x=>'"'+String(x).replaceAll('"','""')+'"';
+ const csv='\uFEFF'+['video_id,time_seconds,label',...[...db.labels].sort((a,b)=>a.time-b.time).map(v=>[v.videoId,v.time,v.label].map(quote).join(','))].join('\r\n');
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='reaction_labels_'+(db.videoId||'unknown')+'.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);
 };
-restore();setInterval(()=>{if(ready&&player&&typeof player.getCurrentTime==='function')$('clock').textContent=fmt(player.getCurrentTime());},500);
-</script><script src="https://www.youtube.com/iframe_api"></script></body></html>
+$('send').onclick=async()=>{
+ if(!validId(db.videoId)||!db.labels.length){sendStatus('先に動画とリアクションを登録してね。');return;}
+ if(db.labels.length>100){sendStatus('一度に送れるのは100件までです。');return;}
+ if(!confirm(db.labels.length+'件のリアクションを送信しますか？\nお名前：'+(db.nickname||'匿名')))return;
+ if(!db.batchId){db.batchId='b'+Date.now().toString(36)+Math.random().toString(36).slice(2,14);save();}
+ const payload={nickname:db.nickname,video_id:db.videoId,items:db.labels.map(v=>({time_seconds:v.time,label:v.label})),batch_id:db.batchId};
+ $('send').disabled=true;sendStatus('送信リクエストを送っています…');
+ try{
+  await fetch(ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+  sendStatus('送信リクエストを送りました。ブラウザからは受信成功を確認できないため、管理者がスプレッドシートを確認してください。');
+ }catch(e){sendStatus('送信エラー：'+e.message+'。記録は端末に残っています。');}
+ finally{$('send').disabled=false;}
+};
+setInterval(()=>{if(ready){const t=getTime();$('time').textContent=fmt(t);if(Math.abs(t-db.lastTime)>2){db.lastTime=t;save();}}},1000);
+$('nickname').value=db.nickname;
+$('url').value=db.videoId?'https://www.youtube.com/watch?v='+db.videoId:'';
+render();
+// As in the working personal app, initialization happens only when a video is explicitly opened.
+window.addEventListener('error',e=>{if(!ready)status('ページの実行エラー：'+e.message);});
+</script></body></html>
