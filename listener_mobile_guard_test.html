@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ああんおおん発見器 | YouTube・Twitch対応</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic UI",sans-serif;color:#59462e;background:#fff9ed}*{box-sizing:border-box}body{margin:0}main{max-width:780px;margin:auto;padding:16px 12px 45px}h1{font-size:22px}p,.muted{color:#796c5b;font-size:13px;line-height:1.6}.panel{background:#fff;border:1px solid #ebdec4;border-radius:18px;padding:14px;margin:12px 0;box-shadow:0 3px 12px #75633810}label{display:block;font-weight:700;margin-bottom:7px}input{width:100%;padding:12px;font-size:16px;border:1px solid #d6c6a9;border-radius:12px}button{font:inherit;border:0;border-radius:12px;padding:12px;cursor:pointer;font-weight:700;color:#59462e;background:#efe6d2}button:disabled{opacity:.5}.primary{background:#ffe08b}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.time{text-align:center;font-size:25px;font-weight:800;font-variant-numeric:tabular-nums;margin:10px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actions button{font-size:18px;padding:20px 6px}.pink{background:#f9c9dc}.blue{background:#cbe3ff}.yellow{background:#ffe0a0}.mint{background:#c9efdb}#status{white-space:pre-wrap;min-height:2em}.player-scroll{overflow-x:auto;border-radius:12px;background:#171923}#player{width:100%;min-width:400px;min-height:300px;aspect-ratio:16/9}#player iframe{display:block}.item{border-bottom:1px solid #eee;padding:9px 0;display:flex;align-items:center;gap:5px}.item span{flex:1;font-size:13px}.item button{padding:7px;font-size:12px}.note{background:#fff1cf;padding:10px;border-radius:10px;font-size:12px;line-height:1.7}.foot{font-size:12px;color:#917854}
+ #mobileTwitchNotice[hidden]{display:none} .platforms{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.platforms button{background:#efe6d2;border:2px solid transparent;padding:15px 5px}.platforms button.active{background:#ffe08b;border-color:#d3ab58}.platforms button:focus-visible{outline:3px solid #5b84bc;outline-offset:2px} #player.youtube{width:100%;min-width:0;min-height:0;aspect-ratio:16/9} #player.youtube iframe{width:100%;height:100%} @media(max-width:450px){.row button{padding:12px 5px}.item{flex-wrap:wrap}.item span{flex-basis:100%}} </style></head><body><main>
+<h1>🐥 ああんおおん発見器</h1>
+<p>YouTubeとTwitchのどちらでも名場面を探せるぴよ！ リアクションを記録して、名場面を届けてね。</p>
+<section class="panel"><label for="nickname">ニックネーム（任意）</label><input id="nickname" maxlength="30" placeholder="未入力なら匿名"><label style="margin-top:14px">どちらで発見する？</label><div class="platforms"><button id="youtube" class="active" type="button">▶ YouTubeで発見</button><button id="twitch" type="button">Twitchで発見</button></div><label for="url" id="urlLabel">YouTubeアーカイブURL</label><input id="url" type="url" inputmode="url" placeholder="https://www.youtube.com/watch?v=..."><div class="row" style="margin-top:10px"><button id="load" class="primary">🐥 動画を開く</button><button id="resume">前回の位置へ</button></div><p id="status" role="status">動画を選んでURLを入力してね。</p></section>
+<section class="panel"><div class="player-scroll"><div id="player" class="youtube"></div></div><p class="foot" id="playerNote">YouTubeの再生画面だよ。</p><div id="time" class="time">00:00:00</div><div class="row"><button id="back">−5秒</button><button id="play" class="primary">再生 / 停止</button><button id="forward">＋5秒</button></div><p>リアクションが聞こえた瞬間に押してね。広告中は押さないでね。</p><p id="mobileTwitchNotice" class="note" role="alert" hidden>📱 Twitch版のリアクション登録・送信はPC専用です。スマホでは再生時刻が正しく取得できないため、PCから利用してね。YouTube版はスマホでも利用できます。</p><div class="actions"><button class="pink" data-label="ああん">♡ ああん</button><button class="blue" data-label="おおん">おおん！</button><button class="yellow" data-label="ナイスプレイ">★ ナイスプレイ！</button><button class="mint" data-label="情けない">🥹 情けない</button></div></section>
+<section class="panel"><b>リアクション記録 <span id="count">0</span>件</b><div id="items"></div><div class="row"><button id="export">CSVで保存</button><button id="clear">この動画の記録を全件削除</button></div><p class="muted">記録はこのブラウザ内に動画ごとに保存。動画を切り替えても他の記録は消さないよ。必要な記録はCSVでバックアップしてね。</p></section>
+<section class="panel"><h2>🐥 リアクションを送信</h2><p>送信するのは動画サービス・動画ID・再生時刻・リアクション・ニックネーム（任意）です。</p><button class="primary" id="send" style="width:100%;padding:18px">内容を確認して送信</button><p id="sendStatus" role="status" style="white-space:pre-wrap;min-height:1.5em"></p><div class="note">🔒 記録の送信先は公式のリアクション記録シートです。送信完了の表示は受信確定を意味しません。記録はブラウザにも保存されます。</div></section>
+<script src="https://player.twitch.tv/js/embed/v1.js"></script>
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id), KEY='toririn_unified_listener_test_v1';
+const LABELS=['ああん','おおん','ナイスプレイ','情けない'];
+// Mobile-device check based on the device, not viewport width. iPad desktop-style UA is also covered.
+const IS_MOBILE=/(iPhone|iPad|iPod|Android|Mobile|Windows Phone)/i.test(navigator.userAgent)||
+ (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+function blockedTwitch(){return IS_MOBILE&&store.platform==='twitch';}
+function updateMobileTwitchGuard(){const blocked=blockedTwitch();
+ $('mobileTwitchNotice').hidden=!blocked;
+ document.querySelectorAll('[data-label]').forEach(b=>{b.disabled=blocked;b.title=blocked?'Twitchのリアクション登録はPC専用です':'';});
+ $('send').disabled=blocked;$('send').title=blocked?'Twitchの送信はPC専用です':'';
+}
+const ENDPOINT='https://script.google.com/macros/s/AKfycbzdvhoFwJY5pUaV3rPWkzW0RxriVtE-UzrzaXl2UGkU8V3P6_WH7vAZFaNn16DQHi8_eQ/exec';
+let store={platform:'youtube',activeKey:'',videos:{},nickname:''},player=null,ready=false,activePlatform='',sequence=0,pendingYoutube='',generation=0;
+try{const v=JSON.parse(localStorage.getItem(KEY)||'null');if(v&&typeof v==='object'&&v.videos&&typeof v.videos==='object')store={...store,...v};}catch(e){}
+if(!['youtube','twitch'].includes(store.platform))store.platform='youtube';
+if(typeof store.nickname!=='string')store.nickname='';
+$('nickname').value=store.nickname;
+$('nickname').addEventListener('input',()=>{store.nickname=$('nickname').value.trim().slice(0,30);save();});
+function status(s){$('status').textContent=s;}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(store));}catch(e){status('端末に保存できません。CSVでバックアップしてね。');}}
+function fmt(t){t=Math.max(0,Math.floor(Number(t)||0));return [Math.floor(t/3600),Math.floor(t%3600/60),t%60].map(x=>String(x).padStart(2,'0')).join(':');}
+function videoKey(platform,id){return platform+':'+id;}
+function current(){return store.videos[store.activeKey]||null;}
+function extract(s,platform){try{const u=new URL(s.trim());const h=u.hostname.toLowerCase();if(platform==='twitch'){
+ if(!['twitch.tv','www.twitch.tv','m.twitch.tv'].includes(h))return '';
+ const m=u.pathname.match(/^\/videos\/(\d+)\/?$/);return m?m[1]:'';
+ }if(['youtu.be','www.youtu.be'].includes(h))return u.pathname.split('/')[1]||'';
+ if(['youtube.com','www.youtube.com','m.youtube.com','music.youtube.com','youtube-nocookie.com','www.youtube-nocookie.com'].includes(h)){
+  if(u.pathname==='/watch')return u.searchParams.get('v')||'';
+  const m=u.pathname.match(/^\/(?:live|shorts|embed)\/([^/]+)/);return m?m[1]:'';
+ }}catch(e){}return '';}
+function valid(id,platform){return platform==='youtube'?/^[\w-]{11}$/.test(id):/^\d+$/.test(id);}
+function canonical(platform,id){return platform==='twitch'?'https://www.twitch.tv/videos/'+id:'https://www.youtube.com/watch?v='+id;}
+function platformUI(){const p=store.platform;$('youtube').classList.toggle('active',p==='youtube');$('twitch').classList.toggle('active',p==='twitch');$('youtube').setAttribute('aria-pressed',String(p==='youtube'));$('twitch').setAttribute('aria-pressed',String(p==='twitch'));
+ $('urlLabel').textContent=(p==='youtube'?'YouTube':'Twitch')+'アーカイブURL';$('url').placeholder=p==='youtube'?'https://www.youtube.com/watch?v=...':'https://www.twitch.tv/videos/123456789';
+ $('playerNote').textContent=p==='twitch'?(IS_MOBILE?'📱 Twitchのリアクション登録はPC専用だよ。スマホでは正しい時刻が取得できないため、登録・送信を停止しています。':'Twitch公式プレイヤーで発見するぴよ！'):'YouTubeプレイヤーで発見するぴよ！';
+ $('player').className=p==='youtube'?'youtube':'';
+ const rec=current();$('url').value=rec&&rec.platform===p?canonical(p,rec.id):'';
+ render();updateMobileTwitchGuard();}
+function destroyPlayer(){ready=false;generation++;pendingYoutube='';$('time').textContent='00:00:00';
+ if(player&&activePlatform==='youtube'&&typeof player.destroy==='function'){try{player.destroy();}catch(e){}}
+ if(player&&activePlatform==='twitch'&&typeof player.pause==='function'){try{player.pause();}catch(e){}}
+ player=null;activePlatform='';$('player').replaceChildren();}
+function switchPlatform(p){if(p===store.platform)return;destroyPlayer();store.platform=p;
+ const entries=Object.entries(store.videos).filter(([k,v])=>v.platform===p);store.activeKey=entries.length?entries[entries.length-1][0]:'';
+ platformUI();save();status(p==='youtube'?'YouTubeに切り替えたよ。動画を開いてね。':'Twitchに切り替えたよ。動画を開いてね。');}
+$('youtube').onclick=()=>switchPlatform('youtube');$('twitch').onclick=()=>switchPlatform('twitch');
+window.onYouTubeIframeAPIReady=()=>{if(pendingYoutube&&store.platform==='youtube'){const id=pendingYoutube;pendingYoutube='';makeYoutube(id);}};
+function makeYoutube(id){if(!window.YT||!YT.Player){pendingYoutube=id;status('YouTubeプレイヤーを準備中…');return;}
+ const token=generation;const el=document.createElement('div');el.id='yt-frame';$('player').appendChild(el);
+ try{player=new YT.Player('yt-frame',{videoId:id,playerVars:{playsinline:1,rel:0,origin:location.origin},events:{onReady:()=>{if(token!==generation)return;ready=true;status('YouTubeの準備ができたよ！');},onError:e=>{if(token===generation)status('YouTube再生エラー '+e.data+'。公開・埋め込み設定を確認してね。');}}});activePlatform='youtube';}
+ catch(e){status('YouTubeの初期化エラー：'+e.message);}}
+function makeTwitch(id){if(!window.Twitch||!Twitch.Player){status('Twitchプレイヤーが読み込めないよ。通信環境を確認してね。');return;}
+ if(location.protocol!=='https:'||!location.hostname){status('Twitchの再生にはGitHub PagesなどHTTPS公開ページが必要だよ。');return;}
+ const token=generation;const el=document.createElement('div');el.id='twitch-frame';$('player').appendChild(el);
+ try{player=new Twitch.Player('twitch-frame',{video:id,width:'100%',height:Math.max(300,Math.round($('player').getBoundingClientRect().width*9/16)),autoplay:false,muted:false,parent:[location.hostname]});activePlatform='twitch';
+ player.addEventListener(Twitch.Player.READY,()=>{if(token!==generation)return;ready=true;status('Twitchの準備ができたよ！');});
+ player.addEventListener(Twitch.Player.PLAYING,()=>{if(token!==generation)return;ready=true;status('Twitchで再生中！');});
+ player.addEventListener(Twitch.Player.PLAYBACK_BLOCKED,()=>{if(token===generation)status('再生がブロックされたよ。動画内の再生ボタンを押してみてね。');});
+ }catch(e){status('Twitch初期化エラー：'+e.message);}}
+function openVideo(){const platform=store.platform,id=extract($('url').value,platform);if(!valid(id,platform)){status('正しい'+(platform==='youtube'?'YouTube':'Twitch')+'アーカイブURLを入力してね。');return;}
+ const key=videoKey(platform,id);if(!store.videos[key])store.videos[key]={platform,id,labels:[],lastTime:0,batchId:''};store.activeKey=key;save();destroyPlayer();platformUI();status('動画を読み込み中…');
+ if(platform==='youtube')makeYoutube(id);else makeTwitch(id);}
+$('load').onclick=openVideo;
+function getTime(){if(!ready||!player||activePlatform!==store.platform)return null;try{const t=Number(player.getCurrentTime());return Number.isFinite(t)&&t>=0?t:null;}catch(e){return null;}}
+function seek(t){if(!ready||!player){status('先に動画を開いてね。');return;}
+ try{if(store.platform==='youtube')player.seekTo(Math.max(0,t),true);else player.seek(Math.max(0,t));}catch(e){status('時刻移動エラー：'+e.message);}}
+$('resume').onclick=()=>{const v=current();if(v)seek(v.lastTime);else status('先に動画を開いてね。');};
+$('back').onclick=()=>{const t=getTime();if(t!==null)seek(t-5);};
+$('forward').onclick=()=>{const t=getTime();if(t!==null)seek(t+5);};
+$('play').onclick=()=>{if(!ready){status('先に動画を開いてね。');return;}try{
+ if(store.platform==='youtube')player.getPlayerState()===YT.PlayerState.PLAYING?player.pauseVideo():player.playVideo();
+ else player.isPaused()?player.play():player.pause();
+ }catch(e){status('再生操作エラー：'+e.message);}};
+document.querySelectorAll('[data-label]').forEach(b=>b.onclick=()=>{if(blockedTwitch()){status('スマホのTwitchでは時刻が正しく取得できないため、リアクションはPCから登録してね。');return;}const v=current(),t=getTime();if(!v||t===null){status('動画を再生して、再生時刻を取得してから押してね。');return;}
+ v.labels.push({uid:Date.now()+'-'+(++sequence),time:Math.round(t*10)/10,label:b.dataset.label});v.lastTime=t;v.batchId='';save();render();status(fmt(t)+' に「'+b.dataset.label+'」を登録！');});
+function render(){const v=current(),labels=v&&v.platform===store.platform?v.labels:[];$('count').textContent=labels.length;const target=$('items');target.replaceChildren();
+ [...labels].sort((a,b)=>a.time-b.time).forEach(item=>{const line=document.createElement('div');line.className='item';const name=document.createElement('span');name.textContent=fmt(item.time)+'　'+item.label;
+ const jump=document.createElement('button');jump.textContent='移動';jump.onclick=()=>seek(item.time);
+ const edit=document.createElement('button');edit.textContent='時刻調整';edit.onclick=()=>{const ans=prompt('動画開始からの秒数',String(item.time));if(ans===null)return;const t=Number(ans);if(!ans.trim()||!Number.isFinite(t)||t<0||t>86400){alert('0～86400秒で入力してね');return;}item.time=Math.round(t*10)/10;v.batchId='';save();render();};
+ const del=document.createElement('button');del.textContent='削除';del.onclick=()=>{if(confirm('この記録を削除しますか？')){v.labels=v.labels.filter(x=>x.uid!==item.uid);v.batchId='';save();render();}};
+ line.append(name,jump,edit,del);target.append(line);});}
+$('clear').onclick=()=>{const v=current();if(v&&v.labels.length&&confirm('この動画の記録をすべて消す？')){v.labels=[];v.batchId='';save();render();}};
+$('export').onclick=()=>{const v=current();if(!v||!v.labels.length){status('保存する記録がまだないよ。');return;}const q=x=>'"'+String(x).replaceAll('"','""')+'"';
+ const rows=['platform,video_id,time_seconds,label',...[...v.labels].sort((a,b)=>a.time-b.time).map(i=>[v.platform,v.id,i.time,i.label].map(q).join(','))];
+ const blob=new Blob(['\uFEFF'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='reaction_'+v.platform+'_'+v.id+'.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);};
+setInterval(()=>{const t=getTime();if(t!==null){$('time').textContent=fmt(t);const v=current();if(v&&Math.abs(t-v.lastTime)>2){v.lastTime=t;save();}}},1000);
+function sendStatus(s){$('sendStatus').textContent=s;}
+$('send').onclick=async()=>{
+ if(blockedTwitch()){sendStatus('Twitchのリアクション送信はPC専用です。スマホからは送信できません。');return;}
+ const v=current();
+ if(!v||!Array.isArray(v.labels)||!v.labels.length){sendStatus('先に動画を開いてリアクションを登録してね。');return;}
+ if(v.labels.length>100){sendStatus('一度に送れるのは100件までだよ。');return;}
+ if(!['youtube','twitch'].includes(v.platform)||!valid(v.id,v.platform)){sendStatus('動画情報が正しくありません。');return;}
+ if(!confirm(v.platform.toUpperCase()+' の動画から '+v.labels.length+'件のリアクションを送信しますか？\nニックネーム：'+(store.nickname||'匿名')))return;
+ if(!v.batchId){v.batchId='b'+Date.now().toString(36)+Math.random().toString(36).slice(2,14);save();}
+ const payload={platform:v.platform,video_id:v.id,batch_id:v.batchId,nickname:store.nickname,
+  items:v.labels.map(x=>({time_seconds:Number(x.time),label:x.label}))};
+ $('send').disabled=true;sendStatus('リアクションを送信しています…');
+ try{
+  await fetch(ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+  sendStatus('送信リクエストを送りました！通信の仕組み上、受信完了までは確認できません。記録はブラウザに残っています。');
+ }catch(e){sendStatus('送信できませんでした：'+e.message+'。端末の履歴は残っています。');}
+ finally{updateMobileTwitchGuard();}
+};
+platformUI();status('好きな動画サービスを選んで、アーカイブを開いてね。');
+</script></main></body></html>
