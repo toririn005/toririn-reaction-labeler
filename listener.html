@@ -8,12 +8,12 @@
 label{display:block;font-weight:700;margin-bottom:6px}input{width:100%;font-size:16px;padding:12px;border:1px solid #ddd0d0;border-radius:12px}button{font:inherit;border:0;border-radius:12px;padding:12px;cursor:pointer;font-weight:700}button:disabled{opacity:.45}
 .primary{background:#4e465b;color:white}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:9px}.row>*{flex:1}
 #player{width:100%;aspect-ratio:16/9;background:#171923;border-radius:12px;overflow:hidden}#player iframe{width:100%;height:100%}
-.time{text-align:center;font-variant-numeric:tabular-nums;font-size:24px;font-weight:800;margin:12px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actions button{padding:21px 6px;font-size:18px}.pink{background:#f9c9dc}.blue{background:#cbe3ff}.yellow{background:#ffe0a0;grid-column:span 2}
+.time{text-align:center;font-variant-numeric:tabular-nums;font-size:24px;font-weight:800;margin:12px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actions button{padding:21px 6px;font-size:18px}.pink{background:#f9c9dc}.blue{background:#cbe3ff}.yellow{background:#ffe0a0}.mint{background:#c9efdb}
 .small{font-size:12px;color:#786f7c}.item{border-bottom:1px solid #eee;padding:10px 0;display:flex;align-items:center;gap:8px}.item span{flex:1;font-size:14px}.item button{padding:7px 10px;background:#f4edf0}
 #status,#sendStatus{font-size:13px;color:#675c72;min-height:1.5em;white-space:pre-wrap}.send{background:#f2c96e;width:100%;padding:17px}.note{font-size:12px;color:#a04431}
 </style></head><body><main>
 <h1>🐥 ああんおおん発見器 by とりりん</h1>
-<p>配信の「ああん」「おおん」「ナイスリアクション」を登録して、とりりんの切り抜きAI育成をお手伝い！</p>
+<p>配信の「ああん」「おおん」「ナイスプレイ」「情けない」を登録して、とりりんの切り抜きAI育成をお手伝い！</p>
 <section class="panel">
 <label for="nickname">ニックネーム（任意）</label><input id="nickname" maxlength="30" placeholder="未入力なら匿名">
 <label for="url" style="margin-top:14px">YouTubeアーカイブURL</label><input id="url" inputmode="url" placeholder="https://www.youtube.com/watch?v=...">
@@ -23,7 +23,7 @@ label{display:block;font-weight:700;margin-bottom:6px}input{width:100%;font-size
 <section class="panel"><div id="player"></div><div id="time" class="time">00:00:00</div>
 <div class="row"><button id="back">−5秒</button><button id="play" class="primary">再生 / 停止</button><button id="forward">＋5秒</button></div>
 <p>動画のリアクションが聞こえた瞬間に押してね。広告中は押さないでね。</p>
-<div class="actions"><button class="pink" data-label="ああん">♡ ああん</button><button class="blue" data-label="おおん">おおん！</button><button class="yellow" data-label="ナイスリアクション">★ ナイスリアクション！</button></div>
+<div class="actions"><button class="pink" data-label="ああん">♡ ああん</button><button class="blue" data-label="おおん">おおん！</button><button class="yellow" data-label="ナイスプレイ">★ ナイスプレイ！</button><button class="mint" data-label="情けない">🥹 情けない</button></div>
 </section>
 <section class="panel"><b>登録履歴 <span id="count">0</span>件</b><div id="items"></div>
 <div class="row"><button id="export">CSVでバックアップ</button><button id="clear">全件削除</button></div>
@@ -38,7 +38,7 @@ const $=id=>document.getElementById(id);
 const STORE='toririn_listener_working_v2';
 const OLD_STORE='toririn_github_listener_v1';
 const ENDPOINT='https://script.google.com/macros/s/AKfycbzdvhoFwJY5pUaV3rPWkzW0RxriVtE-UzrzaXl2UGkU8V3P6_WH7vAZFaNn16DQHi8_eQ/exec';
-const VALID_LABELS=['ああん','おおん','ナイスリアクション'];
+const VALID_LABELS=['ああん','おおん','ナイスプレイ','情けない','ナイスリアクション']; // 旧ラベルも履歴互換のため保持
 let db={videoId:'',lastTime:0,labels:[],nickname:'',batchId:''},player=null,ready=false,seq=0,pendingId='';
 try{
  let raw=localStorage.getItem(STORE);
